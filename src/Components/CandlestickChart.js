@@ -1,16 +1,19 @@
+// Candlestick.js
 import React, { useEffect, useState } from 'react';
 import ApexCharts from 'react-apexcharts';
-import { fetchStockData } from '../services';
+import { fetchData } from '../services';
 
-const CandlestickChart = ({ symbol = "AAPL", period }) => {
-  const [series, setSeries] = useState([]);
+const CandlestickChart = ({ period }) => {
+
+const [series, setSeries] = useState([]);
   const [performance, setPerformance] = useState('');
-  const [options, setOptions] = useState({
+
+  const options = {
     chart: {
       type: 'candlestick',
       height: '100%',
       width: '100%',
-      background : 'rgba(48,109,202,.5)',
+      background: 'rgba(48,109,202,.5)',
       toolbar: {
         show: true,
         tools: {
@@ -22,9 +25,8 @@ const CandlestickChart = ({ symbol = "AAPL", period }) => {
           pan: true,
           reset: true,
         },
-        autoSelected: 'zoom' // Default zoom tool selection
+        autoSelected: 'zoom'
       },
-    
       responsive: [
         {
           breakpoint: 1000,
@@ -50,136 +52,86 @@ const CandlestickChart = ({ symbol = "AAPL", period }) => {
       text: 'Candlestick Chart',
       align: 'left',
       style: {
-        color: 'white', 
+        color: 'white',
       }
     },
     xaxis: {
       type: 'datetime',
-      labels: {
-        style: {
-          colors: 'white', // X-axis label color
-        }
-      },
-      axisTicks: {
-        color: 'white' // X-axis ticks color
-      },
-      axisBorder: {
-        color: 'white' // X-axis border color
-      }
+      labels: { style: { colors: 'white' } },
+      axisTicks: { color: 'white' },
+      axisBorder: { color: 'white' }
     },
     yaxis: {
-      labels: {
-        style: {
-          colors: 'white', // Y-axis label color
-        }
-      },
-      tooltip: {
-        enabled: true,
-        style: {
-          color: 'white' // Tooltip text color
-        }
-      }
+      labels: { style: { colors: 'white' } },
+      tooltip: { enabled: true, style: { color: 'white' } }
     },
-    // ? 
-    tooltip: {
-      theme: 'dark' // Ensures tooltip background is suitable for white text
-    },
+    tooltip: { theme: 'dark' },
     grid: {
-      borderColor: '#e0e0e0', // Light grid color for dark background
-      strokeDashArray: 0, // Solid lines
-    }
-  });
-
-  useEffect(() => {
-    const getData = async () => {
-      console.log(`Fetching data for symbol: ${symbol}, period: ${period}`);
-      const data = await fetchStockData(symbol, period);
-      console.log('Raw data:', data);
-      const formattedData = formatData(data, period);
-      console.log('Formatted data:', formattedData);
-
-      setSeries([{ data: formattedData }]);
-      updatePerformance(formattedData);
-    };
-    getData();
-  }, [symbol, period]);
-
-  const formatData = (data, period) => {
-    let timeSeriesKey;
-
-    if (period === '1d') {
-      timeSeriesKey = 'Time Series (5min)'; 
-    } else {
-      timeSeriesKey = 'Time Series (Daily)';
-    }
-
-    if (!data[timeSeriesKey]) return [];
-
-    const now = new Date();
-    let startDate;
-
-    switch (period) {
-      case '1d':
-        startDate = new Date(now.setHours(0, 0, 0, 0)); // Start of today
-        break;
-      case '1w':
-        startDate = new Date(now.setDate(now.getDate() - 7)); // Last 7 days
-        break;
-      case '1m':
-        startDate = new Date(now.setMonth(now.getMonth() - 1)); // Last month
-        break;
-      case '6m':
-        startDate = new Date(now.setMonth(now.getMonth() - 6)); // Last 6 months
-        break;
-      case '1y':
-        startDate = new Date(now.setFullYear(now.getFullYear() - 1)); // Last year
-        break;
-      default:
-        startDate = new Date(now.setFullYear(now.getFullYear() - 1)); // Default to last year
-    }
-
-   return Object.entries(data[timeSeriesKey])
-   .filter(([date]) => new Date(date) >= startDate)
-   .map(([date, value]) => ({
-     x: new Date(date).getTime(),
-     y: [
-       parseFloat(value['1. open']),
-       parseFloat(value['2. high']),
-       parseFloat(value['3. low']),
-       parseFloat(value['4. close'])
-     ]
-   }))
-   .reverse();
-};
-
-  const updatePerformance = (formattedData) => {
-    if (formattedData.length > 0) {
-      const startPrice = formattedData[0].y[0]; // Assuming y[0] is the open price
-      const endPrice = formattedData[formattedData.length - 1].y[3]; // Assuming y[3] is the close price
-      const diff = endPrice - startPrice;
-      const message = diff >= 0 
-        ? `Increased by ${diff.toFixed(2)} (${((diff / startPrice) * 100).toFixed(2)}%)`
-        : `Decreased by ${Math.abs(diff).toFixed(2)} (${((diff / startPrice) * 100).toFixed(2)}%)`;
-      setPerformance(message);
+      borderColor: '#e0e0e0',
+      strokeDashArray: 0,
     }
   };
 
+  useEffect(() => {
+    const loadChartData = async () => {
+      const filteredData = await fetchData(period);
+       const formattedData = filteredData.map(formatStockData);
+       setSeries([{ data: formattedData }]);
+       updatePerformance(formattedData);
+     };
+ 
+     // format stoack data 
+     const formatStockData = (stock) => ({
+       x: new Date(stock.date).getTime(),
+       y: [stock.open, stock.high, stock.low, stock.close].map(Number)
+     });
+ 
+    loadChartData(); //
+  }, [period]);
+
+  const updatePerformance = (formattedData) => {
+    if (formattedData.length === 0) {   // handle error. 
+        setPerformance('No data available');
+        return; 
+    }
+
+    const startPrice = formattedData[0].y[0];
+    const endPrice = formattedData[formattedData.length - 1].y[3];
+    
+    if (isNaN(startPrice) || isNaN(endPrice)) {  // handle case when data format is invalid 
+        setPerformance('Invalid data format');
+        return; 
+    }
+
+    const diff = endPrice - startPrice;
+    const percentage = (diff / startPrice) * 100;
+    const direction = diff >= 0 ? 'Increased' : 'Decreased';
+
+    if (isNaN(diff) || isNaN(percentage)) {
+        setPerformance('Invalid data format');
+        return; 
+    }
+
+    const absDiff = Math.abs(diff).toFixed(2);  // get absolute value 
+    const absPercentage = Math.abs(percentage).toFixed(2);
+    const message = `${direction} by ${absDiff} (${absPercentage}%)`;
+    setPerformance(message);
+};
+
   return (
-    <div style={{ width: '100%', height: '100%'}}>
+    <div style={{ width: '100%', height: '100%' }}>
       <ApexCharts
         options={options}
         series={series}
         type="candlestick"
-        //height="100%"
         width="100%"
-        
       />
-       <div style={{ marginTop: '20px', color: 'white' }}>
+      <div style={{ marginTop: '20px', color: 'white' }}>
         Performance: {performance}
       </div>
-     
     </div>
   );
 };
+
 
 export default CandlestickChart;

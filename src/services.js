@@ -1,36 +1,40 @@
 // function to get data 
-/**
- * 
- * https://www.alphavantage.co/documentation/
- * @param {*} symbol 
- */
-// src/services.js
-import axios from 'axios';
 
-const API_KEY = import.meta.env; // .VITE_API_KEY;
+import data from './Components/appleStockData.json';
 
-console.log('API_KEY:', API_KEY);
+// filter data based on period and fetch. 
+export const fetchData = (period) => {
 
-export const fetchStockData = async (symbol, period) => {
-  let functionType, interval ;
+const now = new Date();
+  let startDate = new Date(now);  // deault : current date 
+
   switch (period) {
-    case '1d':
-      functionType = 'TIME_SERIES_INTRADAY';
-      interval = '6min';
+    case '1D':
+      startDate.setDate(now.getDate() - 1);
       break;
-    case '1w':
-    case '1m':
-    case '6m':
-    case '1y':
-      functionType = 'TIME_SERIES_WEEKLY_ADJUSTED';
+    case '1W':
+      startDate.setDate(now.getDate() - 7);
+      break;
+    case '1M':
+      startDate.setMonth(now.getMonth() - 1);
+      break;
+    case '6M':
+      startDate.setMonth(now.getMonth() - 6);
+      break;
+    case '1Y':
+      startDate.setFullYear(now.getFullYear() - 1);
       break;
     default:
-      functionType = 'TIME_SERIES_WEEKLY_ADJUSTED';
+      startDate = new Date(0); // fetch all data. 
   }
-  const url = `https://www.alphavantage.co/query?function=${functionType}&symbol=${symbol}&apikey=${API_KEY}${
-    interval ? `&interval=${interval}` : ''
-  }`;
-  const response = await axios.get(url);
-  //const response = await axios.get(`https://www.alphavantage.co/query?function=${functionType}&symbol=${symbol}&apikey=${API_KEY}`);
-  return response.data;
+ 
+const startTime = startDate.getTime();
+const filteredData = data.filter(stock => {
+   const stockTimestamp = new Date(stock.date).getTime();  // conver to time. 
+  return stockTimestamp >= startTime;   // get stocka data on or after the start date. 
+});
+
+  //const filteredData = data.filter(stock => new Date(stock.date) >= startDate);
+  console.log('Filtered Data:', filteredData);
+  return filteredData;
 };

@@ -7,10 +7,9 @@ import AnalystEstimates from './Components/AnalystEstimates';
 import NewsArticle from './Components/NewsArticle';
 import Ratios from './Components/Ratios';
 
-
 function App() {
  
-  const [period, setPeriod] = useState('1d'); // Default period
+  const [period, setPeriod] = useState('1w'); 
 
     const data = {
       analyst_estimates: {
@@ -50,9 +49,12 @@ function App() {
     };
   
 
-    const handlePeriodChange = (newPeriod) => {
-      setPeriod(newPeriod);
-    };
+// handle period. 
+const handlePeriodChange = (newPeriod) => {
+  console.log(`Changing period to: ${newPeriod}`); // Debug log
+  setPeriod(newPeriod);
+};
+
 
     const styles = {
       container: {
@@ -72,7 +74,6 @@ function App() {
       },
       right: {
         flex: 1,
-        //marginLeft: '20px',
         textAlign : 'left', 
         border: '1px solid #ddd',
         padding: '20px',
@@ -91,8 +92,7 @@ function App() {
         flexDirection: 'column',
         alignItems: 'center',
         marginBottom: '20px',
-      //  backgroundColor: 'rgba(48,109,202,.5)',
-       // padding : '20px', 
+     
       },
       header : {
         color: 'white', 
@@ -146,7 +146,8 @@ function App() {
       
       <div style={styles.chartContainer}>
       <div style={styles.chart}>
-        <CandlestickChart symbol="AAPL" period={period} />
+      <CandlestickChart period={period} />
+       storeData(); 
       </div>
        </div>
 
