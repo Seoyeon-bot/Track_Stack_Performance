@@ -4,9 +4,9 @@ import ApexCharts from 'react-apexcharts';
 import { fetchData } from '../services';
 
 const CandlestickChart = ({ period }) => {
-
+// resource(citation): https://apexcharts.com/react-chart-demos/candlestick-charts/category-x-axis/
 const [series, setSeries] = useState([]);
-  const [performance, setPerformance] = useState('');
+const [performance, setPerformance] = useState('');
 
   const options = {
     chart: {
@@ -73,11 +73,11 @@ const [series, setSeries] = useState([]);
   };
 
   useEffect(() => {
-    const loadChartData = async () => {
+    const displayCharData = async () => {
       const filteredData = await fetchData(period);
-       const formattedData = filteredData.map(formatStockData);
-       setSeries([{ data: formattedData }]);
-       updatePerformance(formattedData);
+      const formattedData = filteredData.map(formatStockData);
+      setSeries([{ data: formattedData }]);
+      updatePerformance(formattedData);
      };
  
      // format stoack data 
@@ -86,35 +86,42 @@ const [series, setSeries] = useState([]);
        y: [stock.open, stock.high, stock.low, stock.close].map(Number)
      });
  
-    loadChartData(); //
+     displayCharData(); 
   }, [period]);
 
+  // fetch datas within selected period. 
+  /*
+  const handleChartClick = ({ dataPointIndex }) => {
+    const currentPeriodData = series[0].data.slice(dataPointIndex);
+    console.log('current period data : ' , currentPeriodData); 
+    updatePerformance(currentPeriodData);  // update performance with set of datas within current period. 
+  };
+  */
+
   const updatePerformance = (formattedData) => {
+    console.log("formattedData :  " , formattedData);
     if (formattedData.length === 0) {   // handle error. 
         setPerformance('No data available');
         return; 
-    }
-
-    const startPrice = formattedData[0].y[0];
-    const endPrice = formattedData[formattedData.length - 1].y[3];
+    } 
     
+    const startPrice = formattedData[0].y[0]; // first data point's open price 
+    const endPrice = formattedData[formattedData.length - 1].y[3]; // last data point's close price. 
+    
+    console.log('startprice : ' , startPrice);
+    console.log('endPrice : ' , endPrice); 
+
     if (isNaN(startPrice) || isNaN(endPrice)) {  // handle case when data format is invalid 
         setPerformance('Invalid data format');
         return; 
     }
 
     const diff = endPrice - startPrice;
-    const percentage = (diff / startPrice) * 100;
+    const percentage = ((diff / startPrice) * 100).toFixed(2);
     const direction = diff >= 0 ? 'Increased' : 'Decreased';
-
-    if (isNaN(diff) || isNaN(percentage)) {
-        setPerformance('Invalid data format');
-        return; 
-    }
-
-    const absDiff = Math.abs(diff).toFixed(2);  // get absolute value 
-    const absPercentage = Math.abs(percentage).toFixed(2);
-    const message = `${direction} by ${absDiff} (${absPercentage}%)`;
+    const absDiff = Math.abs(diff).toFixed(2);
+    const message = `${direction} by ${absDiff} (${percentage}%)`;
+  
     setPerformance(message);
 };
 
@@ -125,6 +132,7 @@ const [series, setSeries] = useState([]);
         series={series}
         type="candlestick"
         width="100%"
+       // onClick={handleChartClick}
       />
       <div style={{ marginTop: '20px', color: 'white' }}>
         Performance: {performance}
@@ -132,6 +140,5 @@ const [series, setSeries] = useState([]);
     </div>
   );
 };
-
 
 export default CandlestickChart;

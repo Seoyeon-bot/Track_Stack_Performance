@@ -4,37 +4,39 @@ import data from './Components/appleStockData.json';
 
 // filter data based on period and fetch. 
 export const fetchData = (period) => {
-
-const now = new Date();
+  const now = new Date();
   let startDate = new Date(now);  // deault : current date 
 
   switch (period) {
-    case '1D':
+   
+    case '1d':
       startDate.setDate(now.getDate() - 1);
       break;
-    case '1W':
+    case '1w':
       startDate.setDate(now.getDate() - 7);
       break;
-    case '1M':
+    case '1m':
       startDate.setMonth(now.getMonth() - 1);
       break;
-    case '6M':
+    case '6m':
       startDate.setMonth(now.getMonth() - 6);
       break;
-    case '1Y':
+    case '1y':
       startDate.setFullYear(now.getFullYear() - 1);
       break;
     default:
-      startDate = new Date(0); // fetch all data. 
+      console.log('Invalid period selected. Fetching all data.');
+      startDate = new Date(0); // fetch all data
   }
- 
-const startTime = startDate.getTime();
-const filteredData = data.filter(stock => {
-   const stockTimestamp = new Date(stock.date).getTime();  // conver to time. 
-  return stockTimestamp >= startTime;   // get stocka data on or after the start date. 
-});
+  const startTime = startDate.getTime();
+  const filteredData = data.filter(stock => withinDesiredPeriod(stock, startTime)); // filter data based on period. 
 
-  //const filteredData = data.filter(stock => new Date(stock.date) >= startDate);
   console.log('Filtered Data:', filteredData);
   return filteredData;
+};
+
+const withinDesiredPeriod = (stock, startTime) => {
+  const stockTime = new Date(stock.date).getTime();
+  const currentTime = Date.now(); 
+  return stockTime >= startTime && stockTime <= currentTime;
 };
